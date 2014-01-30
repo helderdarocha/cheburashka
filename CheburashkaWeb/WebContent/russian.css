@@ -1,0 +1,58 @@
+﻿* {
+   font-family: sans-serif
+}
+
+#tables > section, #test > section {
+	border: solid navy 1px;
+	padding: 5px;
+	margin: 5px;
+	float: left;
+	width: 800px;
+}
+
+tables h2 {
+	float:left;
+	width: 100%;
+}
+
+.imperfective, .perfective {
+	width: 45%;
+	padding: 5px;
+}
+
+.imperfective {
+	float: left;
+	border: solid rgb(80%,80%,90%) 1px;
+	background: rgb(90%,95%,100%);
+	margin: 0 0 10px 15px;
+}
+.perfective{
+	float: right;
+	background: rgb(100%,95%,90%);
+	border: solid rgb(90%,80%,80%) 1px;
+	margin: 0 15px 10px 0 ;
+}
+
+table {
+	width: 100%;
+}
+
+/* floating box */
+#test {
+	border: solid navy 2px;
+	position: fixed; 
+	top: 100px; 
+	left: 100px; 
+	background: rgb(80%,80%,90%); 
+	opacity: 0.9; 
+}
+
+input {
+    font-size: 14pt
+}
+mark {
+    font-weight: bold; 
+    color: red; 
+    background: transparent
+}
+

@@ -1,0 +1,427 @@
+﻿<!doctype html>
+
+<html>
+   <head>
+      <title>Add new word</title>
+      <script type="text/javascript" src="keyboard.js" charset="UTF-8"></script>
+      <script src="russian.js"></script>
+      <script src="irregular.js"></script>
+      <script src="russiancases.js"></script>
+      <link rel="stylesheet" type="text/css" href="keyboard.css">
+      <script>
+      
+      var notVerbForm;
+      var impersonalCasesForm;
+      var personalCasesForm;
+      var casesForm;
+      var nounsForm;
+      var verbsForm;
+      var genderSelect;
+      var animateSelect;
+      var word;
+      var verb;
+      var translations;
+      
+      function hideAllSections() {
+      	  nounsForm.style.display="none";
+      	  notVerbForm.style.display="none";
+          impersonalCasesForm.style.display="none";
+          personalCasesForm.style.display="none";
+          casesForm.style.display="none";
+          verbsForm.style.display="none";
+          word.style.display="none";
+          verb.style.display="none";
+          translations.style.display="none";
+      }
+      
+      function toggleCaseNameDisplay(label) {
+      	  var caseLabels = document.getElementsByClassName("case");
+      	  var ckLabels = label.getElementsByTagName("span");
+      	  
+      	  if (label.form.caselang.checked) {
+      	  	  ckLabels[1].style.display = "inline"; 
+      	  	  ckLabels[0].style.display = "none"; 
+      	  } else {
+      	      ckLabels[0].style.display = "inline"; 
+      	  	  ckLabels[1].style.display = "none"; 
+      	  }
+
+      	  for (var i = 0; i < caseLabels.length; i++) {
+      		  var t = caseLabels[i].textContent;
+      		  caseLabels[i].textContent = caseLabels[i].title;
+      		  caseLabels[i].title = t;
+      	  }
+      }
+      
+      function init() {
+      	  notVerbForm = document.getElementById("not-verb-form");
+       	  impersonalCasesForm = document.getElementById("impersonal-cases-form");
+          personalCasesForm = document.getElementById("personal-cases-form");
+          casesForm = document.getElementById("cases-form");
+          nounsForm = document.getElementById("nouns-form");
+       	  verbsForm = document.getElementById("verbs-form");
+          genderSelect = document.getElementById("gender-select");
+       	  animateSelect = document.getElementById("animate-select");
+       	  
+       	  word = document.getElementById("word");
+       	  verb = document.getElementById("verb");
+       	  translations = document.getElementById("translations");
+       	  
+       	  hideAllSections();
+       	  
+       	  testNouns();
+       	  //testAdjectives();
+       	  
+      }
+      function showForm(form) {
+            var selector = form.entryType;
+            hideAllSections();
+
+      		switch(selector.selectedIndex) {
+      		    case 0:
+      		    	word.style.display="block";
+      				translations.style.display="block";
+      				form.wrun.placeholder = "Type an expression";
+      		    break;
+      			case 1:
+      				verbsForm.style.display="block";
+      				word.style.display="none";
+      				verb.style.display="block";
+      				translations.style.display="block";
+      			break;
+      			case 2:
+      				nounsForm.style.display="block";
+      				notVerbForm.style.display="block";
+      				personalCasesForm.style.display="block";
+      				casesForm.style.display="block";
+      				word.style.display="block";
+      				verb.style.display="none";
+      				translations.style.display="block";
+      				form.wrun.placeholder = "Type a masculine noun";
+      			break;
+      			case 3: case 4: case 5:
+      				notVerbForm.style.display="block";
+      				impersonalCasesForm.style.display="block";
+      				casesForm.style.display="block";
+      				word.style.display="block";
+      				verb.style.display="none";
+      				translations.style.display="block";
+      				form.wrun.placeholder = "Type a masculine adjective";
+      			break;
+      			case 6:
+      				word.style.display="block";
+      				translations.style.display="block";
+      				form.wrun.placeholder = "Type an adverb";
+      			default:
+      			break;
+      		}
+      		
+      		if (selector.options[7]) {
+      			selector.removeChild(selector.options[7]);
+      		}
+      }
+      
+      function declineNoun(form) {
+
+		  var stemString = form.nounStemString.value;
+		  
+		  var noun = createNounFromNotation(stemString);
+		  var plunoun = createNounFromNotation(stemString);
+		  plunoun.isPlural = true;
+		  
+		  form.mainNounStem.value = noun.stem;
+		  form.secondaryNounStem.value = noun.secondaryStem;
+		  form.stressPosition.value = noun.stressPosition;
+		  form.clusterBuster.value = noun.clusterBuster;
+		  
+		  if (noun.uloc) {
+			  form.uloc.checked = true;
+		  }
+		  
+		  noun.gender = plunoun.gender = form.genderNumber.selectedIndex;
+		  
+		  if(form.animate.selectedIndex == 0) {
+			  noun.isAnimate = true;
+		  } else {
+			  noun.isAnimate = false;
+		  }
+		  plunoun.isAnimate = noun.isAnimate;
+		  
+		  noun.generateCases();
+		  plunoun.generateCases();
+		
+		  form.ncase.value = noun.cases['N'];
+		  form.acase.value = noun.cases['A'];
+		  form.gcase.value = noun.cases['G'];
+		  form.dcase.value = noun.cases['D'];
+		  form.icase.value = noun.cases['I'];
+		  form.pcase.value = noun.cases['P'];
+		  
+		  form.ncaseplu.value = plunoun.cases['N'];
+		  form.acaseplu.value = plunoun.cases['A'];
+		  form.gcaseplu.value = plunoun.cases['G'];
+		  form.dcaseplu.value = plunoun.cases['D'];
+		  form.icaseplu.value = plunoun.cases['I'];
+		  form.pcaseplu.value = plunoun.cases['P'];
+      
+      }
+      
+      function declineAdjectives(form) {
+            var stemString = form.adjStemString.value;
+      		var adjset = new AdjectiveSet(stemString);
+
+			form.adjn.value  = adjset.genderSet[0].cases['N'];
+			form.adjnf.value = adjset.genderSet[1].cases['N'];
+			form.adjnn.value = adjset.genderSet[2].cases['N'];
+			form.adjnp.value = adjset.plural.cases['N'];
+			
+			form.adja.value  = adjset.genderSet[0].cases['A'];
+			form.adjaf.value = adjset.genderSet[1].cases['A'];
+			form.adjan.value = adjset.genderSet[2].cases['A'];
+			form.adjap.value = adjset.plural.cases['A'];
+			
+			form.adjaanim.value  = adjset.genderSet[0].cases['Aa'];
+			form.adjaanimf.value = adjset.genderSet[1].cases['Aa'];
+			form.adjaanimn.value = adjset.genderSet[2].cases['Aa'];
+			form.adjaanimp.value = adjset.plural.cases['Aa'];
+			
+			form.adjg.value  = adjset.genderSet[0].cases['G'];
+			form.adjgf.value = adjset.genderSet[1].cases['G'];
+			form.adjgn.value = adjset.genderSet[2].cases['G'];
+			form.adjgp.value = adjset.plural.cases['G'];
+			
+			form.adjd.value  = adjset.genderSet[0].cases['D'];
+			form.adjdf.value = adjset.genderSet[1].cases['D'];
+			form.adjdn.value = adjset.genderSet[2].cases['D'];
+			form.adjdp.value = adjset.plural.cases['D'];
+			
+			form.adji.value  = adjset.genderSet[0].cases['I'];
+			form.adjif.value = adjset.genderSet[1].cases['I'];
+			form.adjin.value = adjset.genderSet[2].cases['I'];
+			form.adjip.value = adjset.plural.cases['I'];
+			
+			form.adjp.value  = adjset.genderSet[0].cases['P'];
+			form.adjpf.value = adjset.genderSet[1].cases['P'];
+			form.adjpn.value = adjset.genderSet[2].cases['P'];
+			form.adjpp.value = adjset.plural.cases['P'];
+
+      
+      }
+      
+      function conjugateVerbs(form) {
+      	    var stemString = form.verbStem.value;
+      	    // check if empty
+      	    stemString = stemString.trim();
+			var pair = null;
+			var v = null;
+			if(stemString.indexOf("//") > 0) {
+			   pair = getPairFromGrammarNotation(stemString);
+			   pair.generateConjugations();
+			   v = pair.perf;
+			} else {
+			   v = new Verb(stemString);
+			   v.generateConjugations();
+			}
+			
+			if (pair) {
+				form.yaip.value = pair.impf.presentTense.ya();
+				form.tyip.value = pair.impf.presentTense.ty();
+				form.onip.value = pair.impf.presentTense.on();
+				form.myip.value = pair.impf.presentTense.my();
+				form.vyip.value = pair.impf.presentTense.vy();
+				form.oniip.value = pair.impf.presentTense.oni();
+	
+				form.impa.value = pair.impf.pastTense.on();
+				form.ifpa.value = pair.impf.pastTense.ona();
+				form.inpa.value = pair.impf.pastTense.ono();
+				form.ippa.value = pair.impf.pastTense.oni();
+			}
+			
+			form.yapf.value = v.presentTense.ya();
+			form.typf.value = v.presentTense.ty();
+			form.onpf.value = v.presentTense.on();
+			form.mypf.value = v.presentTense.my();
+			form.vypf.value = v.presentTense.vy();
+			form.onipf.value = v.presentTense.oni();
+	
+			form.pmpa.value = v.pastTense.on();
+			form.pfpa.value = v.pastTense.ona();
+			form.pnpa.value = v.pastTense.ono();
+			form.pppa.value = v.pastTense.oni();
+
+      }
+      
+      </script>
+      <style>
+      	form {
+      		width: 800px;
+      	}
+      	fieldset {
+      		border: none;
+      		padding: 0px;
+      	}
+      	section {
+      		display: none;
+      	}
+      </style>
+   </head>
+   <body onload="init()">
+      <form action="http://localhost:8080/CheburashkaWeb/AddNewWord" method="post">
+      <h1>Add new word or expression</h1>
+      
+      <fieldset id="type-select">
+      <p>Type 
+      <select name="entryType" onchange="showForm(this.form)">
+        <option>Expression</option>
+      	<option>Verb</option>
+      	<option>Noun</option>
+      	<option>Adjective</option>
+      	<option>Pronoun</option>
+      	<option>Adverb</option>
+      	<option selected>Select...</option>
+      </select>
+      </fieldset>
+      
+      <p class="not-verb-entry" id="word">По-русски <input type="text" name="wrun" placeholder="masculine noun, adverb, pronoun or adjective" value="" size="60" class="keyboardInput">
+      </p>
+      <p class="verb-entry" id="verb">По-русски <input type="text" name="virun" value="" placeholder="imperfective infinitive" size="30" class="keyboardInput"> / <input type="text" name="vпrun" placeholder="perfective infinitive"  value="" size="30" class="keyboardInput">
+      </p>
+      <p id="translations">Translation in English <input type="text" name="wen" size="60">
+      <br>Tradução em Português <input type="text" name="wpt" size="60"></p>
+
+      <section id="not-verb-form" class="not-verb-entry">
+      
+      </section>
+      
+       <section id="nouns-form" class="not-verb-entry">
+       <p>Full stem notation <input name="nounStemString" value="кошка (е) [2]">
+       <p>Main stem <input name="mainNounStem">
+       <br>Secondary stem <input name="secondaryNounStem">
+       <br>Stress position <input type="number" min="0" step="1" name="stressPosition">
+       <br>Cluster buster vowel <input type="text" name="clusterBuster">
+       <br><input type="checkbox" name="uloc">Prepositional case declines in у.
+       
+      <fieldset id="gender-select">
+      <p>Gender / Number
+      <select name="genderNumber">
+      	<option>Masculine</option>
+      	<option>Feminine</option>
+      	<option>Neuter</option>
+      	<option>Always plural</option>
+      </select>
+      </fieldset>
+      
+      <fieldset id="animate-select">
+      <p>Animate
+      <select name="animate">
+      	<option>Yes</option>
+      	<option>No</option>
+      </select>
+      </fieldset>
+      </section>
+      
+      <section id="cases-form">
+      
+      <section id="impersonal-cases-form" class="not-verb-entry">
+      <p>Adjective Stem Notation <input name="adjStemString" value="хороший">
+      <h2>Cases</h2>
+      <input type="button" onclick="declineAdjectives(this.form)" value="Generate cases"></input>
+      <button>Clear</button>
+      <table>
+      <tr><td>Case</td><td>Masculine</td><td>Feminine</td><td>Neuter</td><td>Plural</td></tr>
+      <tr><td><span class="case" title="именительный">Nominative</span></td><td><input type="text" name="adjn"></td>
+                                                                            <td><input type="text" name="adjnf"></td>
+                                                                            <td><input type="text" name="adjnn"></td>
+                                                                            <td><input type="text" name="adjnp"></td></tr>
+      <tr><td><span class="case" title="винительный">Acusative</span></td><td><input type="text" name="adja"></td>
+                                                                            <td><input type="text" name="adjaf"></td>
+                                                                            <td><input type="text" name="adjan"></td>
+                                                                            <td><input type="text" name="adjap"></td></tr>
+      <tr><td><span class="case" title="винительный">Acusative Anim</span></td><td><input type="text" name="adjaanim"></td>
+                                                                            <td><input type="text" name="adjaanimf"></td>
+                                                                            <td><input type="text" name="adjaanimn"></td>
+                                                                            <td><input type="text" name="adjaanimp"></td></tr>
+      <tr><td><span class="case" title="родительный">Genitive</span></td><td><input type="text" name="adjg"></td>
+                                                                            <td><input type="text" name="adjgf"></td>
+                                                                            <td><input type="text" name="adjgn"></td>
+                                                                            <td><input type="text" name="adjgp"></td></tr>
+      <tr><td><span class="case" title="дательный">Dative</span></td><td><input type="text" name="adjd"></td>
+                                                                            <td><input type="text" name="adjdf"></td>
+                                                                            <td><input type="text" name="adjdn"></td>
+                                                                            <td><input type="text" name="adjdp"></td></tr>
+      <tr><td><span class="case" title="творительный">Instrumental</span></td><td><input type="text" name="adji"></td>
+                                                                            <td><input type="text" name="adjif"></td>
+                                                                            <td><input type="text" name="adjin"></td>
+                                                                            <td><input type="text" name="adjip"></td></tr>
+      <tr><td><span class="case" title="предложный">Prepositional</span></td><td><input type="text" name="adjp"></td>
+                                                                            <td><input type="text" name="adjpf"></td>
+                                                                            <td><input type="text" name="adjpn"></td>
+                                                                            <td><input type="text" name="adjpp"></td></tr>
+      </table>
+      </section>
+
+      <section id="personal-cases-form" class="not-verb-entry">
+      <h2>Cases</h2>
+      <input type="button" onclick="declineNoun(this.form)" value="Generate cases"></input>
+      <button>Clear</button>
+      <table>
+      <tr><td>Case</td><td>Singular</td><td>Plural</td></tr>
+      <tr><td><span class="case" title="именительный">Nominative</span></td><td><input type="text" name="ncase"></td><td><input type="text" name="ncaseplu"></td></tr>
+      <tr><td><span class="case" title="винительный">Acusative</span></td><td><input type="text" name="acase"></td><td><input type="text" name="acaseplu"></td></tr>
+      <tr><td><span class="case" title="родительный">Genitive</span></td><td><input type="text" name="gcase"></td><td><input type="text" name="gcaseplu"></td></tr>
+      <tr><td><span class="case" title="дательный">Dative</span></td><td><input type="text" name="dcase"></td><td><input type="text" name="dcaseplu"></td></tr>
+      <tr><td><span class="case" title="творительный">Instrumental</span></td><td><input type="text" name="icase"></td><td><input type="text" name="icaseplu"></td></tr>
+      <tr><td><span class="case" title="предложный">Prepositional</span></td><td><input type="text" name="pcase"></td><td><input type="text" name="pcaseplu"></td></tr>
+      </table>
+      </section>
+
+      <p><label onclick="toggleCaseNameDisplay(this)"><input type="checkbox" name="caselang">
+         <span lang="ru" style="display:inline">Показатъ имея падеж по-русски.</span>
+         <span lang="en" style="display:none">Show case names in English</span></label>
+         
+      <div class="alert">Please check that the cases were generated correctly before adding to the database (the generator may not know about some exceptions).</div>
+      
+      </section>
+
+	  <section id="verbs-form" class="verb-entry">
+      <p>Full grammar notation <input type="text" name="verbStem">
+
+      <table id="stem-table">
+      <tr><td></td><td>Imperfective</td><td>Perfective</td></tr>
+      <tr><td>Present Stem</td><td><input type="text" name="pfistem"></td><td><input type="text" name="pfpstem"></td></tr>
+      <tr><td>Past Stem</td><td><input type="text" name="paistem"></td><td><input type="text" name="papstem"></td></tr>
+      </table>
+      
+      <h2>Conjugations</h2>
+
+      <input type="button" onclick="conjugateVerbs(this.form)" value="Generate conjugations"></input>
+      <button>Clear</button>
+      
+      <table id="not-past-table">
+      <tr><td></td><td>Imperfective Present</td><td>Perfective Future</td></tr>
+      <tr><td>я</td><td><input type="text" name="yaip"></td><td><input type="text" name="yapf"></td></tr>
+      <tr><td>ты</td><td><input type="text" name="tyip"></td><td><input type="text" name="typf"></td></tr>
+      <tr><td>он, она, оно</td><td><input type="text" name="onip"></td><td><input type="text" name="onpf"></td></tr>
+      <tr><td>мы</td><td><input type="text" name="myip"></td><td><input type="text" name="mypf"></td></tr>
+      <tr><td>вы</td><td><input type="text" name="vyip"></td><td><input type="text" name="vypf"></td></tr>
+      <tr><td>они</td><td><input type="text" name="oniip"></td><td><input type="text" name="onipf"></td></tr>
+      </table>
+      
+      <table id="past-table">
+      <tr><td></td><td>Imperfective Past</td><td>Perfective Past</td></tr>
+      <tr><td>он</td><td><input type="text" name="impa"></td><td><input type="text" name="pmpa"></td></tr>
+      <tr><td>она</td><td><input type="text" name="ifpa"></td><td><input type="text" name="pfpa"></td></tr>
+      <tr><td>оно</td><td><input type="text" name="inpa"></td><td><input type="text" name="pnpa"></td></tr>
+      <tr><td>они</td><td><input type="text" name="ippa"></td><td><input type="text" name="pppa"></td></tr>
+      </table>
+      
+      <div class="alert">Please check that the conjugations were generated correctly before adding to the database (the generator may not know about some exceptions).</div>
+      
+      
+      </section>
+      
+      
+      <input type="submit" value="Add entry to database">
+      </form>
+   </body>
+</html>

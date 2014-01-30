@@ -1,0 +1,196 @@
+﻿<!doctype html>
+
+<html>
+   <head>
+       <style>
+            input[type='text'] {
+           		font-size: 20pt;
+           		font-family: sans-serif;
+           	}
+           	.wordform div {
+           		font-size: 20pt;
+           		font-family: sans-serif;
+           		margin-top: 10px;
+           		padding: 5px;
+           	}
+           	
+           	.letter {
+   				text-decoration: none;
+   				font-weight: regular;
+   				color: black;
+           	}
+
+           	.vowel {
+           		color: navy;
+           	}
+
+           	.cluster {
+           		text-decoration: underline;
+           	}
+           	.stressVowel {
+           		color: red; font-weight: bold;
+           	}
+           
+       </style>
+       <script>
+            var currentWords = new Object();
+
+       		function init() {
+       		    var fieldsets = document.getElementsByClassName("wordform");
+       		    
+       		    for (var i = 0; i < fieldsets.length; i++) {
+       		    	var display = document.createElement("div");
+       		    	display.setAttribute("id", "_"+fieldsets[i].id);
+       		    	fieldsets[i].appendChild(display);
+       		    	
+       		    	var field = fieldsets[i].getElementsByTagName("input")[0];
+       			    field.addEventListener('keyup', copyLetter, false);
+       			
+       			    resetData("_"+fieldsets[i].id);
+       		    }
+       		}
+
+       		function resetData(id) {
+       		    currentWords[id] = new Word(id);
+       		}
+       		
+       		function redraw(wordID) {
+       	        resetData(wordID);
+       	        currentWords[wordID].update();
+       	        for (var i = 0; i < currentWords[wordID].letters.length; i++) {
+       	            drawLetter(wordID, currentWords[wordID].letters[i]); 
+       	    	}
+       	    }
+       	    function drawLetter(wordID, letter) {
+       			var displayLetter = document.createElement("span");
+       			
+       			if (letter.isVowel) {
+       				displayLetter.addEventListener('click', toggleStress, false);
+       				displayLetter.addEventListener('mouseover', hilite, false);
+       				displayLetter.addEventListener('mouseout', unhilite, false);
+       			}
+       			
+       			displayLetter.className = letter.cssClassString();
+       			displayLetter.textContent = letter.character;
+       			displayLetter.letter = letter;
+       			
+       			this.currentWords[wordID].container.appendChild(displayLetter);
+       		}
+
+       		function copyLetter(e) {
+       		    var key = e.which;
+       		    var wordID = "_" + e.target.parentNode.id;
+       		    var field = currentWords[wordID].inputField;
+       		    if (key == 32) { // space - remove
+       		    	field.value = field.value.substring(0, field.value.length-1);
+       		    }
+       			redraw(wordID);
+       		}
+       		
+       		function hilite(e) {
+       			e.target.style.background = "yellow";
+       		}
+       		function unhilite(e) {
+       			e.target.style.background = "transparent";
+       		}
+       		function toggleStress(e) {
+       		    if (e.target.letter.isStressed) {
+       		    	e.target.letter.unMarkStress();
+       		    } else {
+					e.target.letter.markStress();
+       			}
+       			e.target.className = e.target.letter.cssClassString();
+       		}
+       		
+       		
+       		
+       		
+       		/// Objects
+       		
+       		function Word(id) {
+       		    this.letters= new Array(); // array of Letter
+       		    this.characters = new Array();
+       		    this.text = "";
+       		    
+       		    var formdiv = document.getElementById(id.substring(1,id.length));
+       		    this.inputField = formdiv.getElementsByTagName("input")[0];
+       		    this.container = document.getElementById(id);
+       		    this.container.innerHTML = "";
+       		}
+       		
+       		Word.prototype.appendLetter = function (letter) {
+       		    letter.word = this;
+       			this.letters.push(letter);
+       		}
+       		Word.prototype.removeAllStressMarks = function() { 
+       		    var letters = this.container.getElementsByClassName("stressVowel"); 
+       		    if (letters) {
+					for (var i = 0; i < letters.length; i++) { 
+						letters[i].letter.unMarkStress();
+						letters[i].className = letters[i].letter.cssClassString();
+					}
+				}
+       		}
+
+       	    Word.prototype.update = function () { 
+       	    	this.characters = this.inputField.value.split("");
+       	        for (var i = 0; i < this.characters.length; i++) {
+       	            var letter = new Letter(this.characters[i]);
+       	            this.appendLetter(letter);
+       	    	}
+       	    	this.text = this.characters.join(""); 
+       	    }
+       	    
+       		
+       		
+       		function Letter(character) {
+       			this.character = character;
+       			this.isStressed;
+       			this.cssClasses = new Array("letter");
+       			this.word;
+       			
+       			var vowels = /[аеиоуяыоёю]/;
+    			this.isVowel = vowels.test(this.character);
+    			
+    			if (this.isVowel) {
+    				this.cssClasses[1] = "vowel";
+    			}
+       		}
+       		Letter.prototype.markStress = function() {
+       		    this.word.removeAllStressMarks();
+       			this.isStressed = true;
+       			this.cssClasses[this.cssClasses.length] = "stressVowel";
+       		}
+       		Letter.prototype.unMarkStress = function() {
+       			this.isStressed = false;
+       			this.cssClasses.removeElement("stressVowel");
+       		}
+       		Letter.prototype.cssClassString = function() {
+       			return this.cssClasses.join(" ");
+       		};
+       		
+       		
+       		
+       		
+       		/// Prototypes
+       		Array.prototype.removeElement = function(e) {
+       			for (var i = 0; i < this.length; i++) {
+       		    	if (this[i] == e) {
+       		    		this.splice(i,1);
+       		    	}
+       		    }
+       		};
+
+       		
+       </script>
+   </head>
+   
+   <body onload="init()">
+       <form>
+           <div class="wordform" id="verb"><input type="text"></div>
+           <div class="wordform" id="stem"><input type="text"></div>
+           <div class="wordform" id="other"><input type="text"></div>
+       </form>
+   </body>
+   
+</html>

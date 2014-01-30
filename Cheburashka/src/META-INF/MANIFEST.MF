@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: ../javax.persistence_1.99.0.v200906021518.jar:persistence.xml
+JPA-PersistenceUnits: Cheburashka
+
